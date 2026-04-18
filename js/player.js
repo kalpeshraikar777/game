@@ -64,7 +64,6 @@ Game.PlayerManager = {
         return true;
     },
 
-    /** Call at end of each player's turn to track camping */
     updateCamping(p) {
         if (p.isInHouse) {
             const cell = Game.Board.grid[p.row][p.col];
@@ -78,6 +77,10 @@ Game.PlayerManager = {
             p.turnsInHouse = 0;
             p.currentHouseId = null;
         }
+
+        // Track exact tile visits to lure Slenderman
+        const key = `${p.row},${p.col}`;
+        p.visitCounts[key] = (p.visitCounts[key] || 0) + 1;
     },
 
     at(r,c) { return Game.Players.find(p => p.isAlive && p.row===r && p.col===c) || null; },

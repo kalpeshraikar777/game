@@ -10,23 +10,22 @@ Game.Slenderman = {
     spawn() {
         const S = Game.CONFIG.BOARD_SIZE;
 
-        // 1) Check for campers — high chance to spawn in their house
-        const campers = Game.PlayerManager.getCampers();
-        if (campers.length > 0 && Math.random() < Game.CONFIG.CAMP_SPAWN_CHANCE) {
-            const camper = pick(campers);
-            const house = Game.Objects.list[camper.currentHouseId];
-            if (house) {
-                const avail = house.tiles.filter(([dr,dc]) => {
-                    const r=house.row+dr, c=house.col+dc;
-                    return !Game.PlayerManager.at(r,c);
-                });
-                if (avail.length > 0) {
-                    const [dr, dc] = pick(avail);
-                    this.row = house.row+dr; this.col = house.col+dc;
-                    this.active = true;
-                    return;
-                }
-            }
+        // 1) Target players who are camping OR visiting the same exact tile 3+ times, AND have no gun
+        const targetCampers = Game.PlayerManager.alivePlayers().filter(p => {
+            if (p.guns > 0) return false;
+            const key = `${p.row},${p.col}`;
+            if (p.turnsInHouse >= Game.CONFIG.CAMP_THRESHOLD) return true;
+            if (p.visitCounts[key] >= 3) return true;
+            return false;
+        });
+
+        if (targetCampers.length > 0) {
+            // Spawn exactly on this player
+            const target = pick(targetCampers);
+            this.row = target.row;
+            this.col = target.col;
+            this.active = true;
+            return;
         }
 
         // 2) Regular spawn (empty or house tiles)
@@ -47,13 +46,17 @@ Game.Slenderman = {
         this.hitList = [];
         this.scanLines = [];
 
+        // Check exact spot first (in case Slenderman spawned exactly on a player)
+        const pExact = Game.PlayerManager.at(this.row, this.col);
+        if (pExact) this.hitList.push(pExact);
+
         // Same-house auto-hit
-        const cell = Game.Board.grid[this.row][this.col];
-        if (cell.type === 'house' && cell.objectId !== null) {
+        const cell = Game.Board.grid[this.row]?.[this.col];
+        if (cell && cell.type === 'house' && cell.objectId !== null) {
             const house = Game.Objects.list[cell.objectId];
-            house.tiles.forEach(([dr,dc]) => {
+            house.tiles.forEach(([dr,dc,...rest]) => {
                 const p = Game.PlayerManager.at(house.row+dr, house.col+dc);
-                if (p) this.hitList.push(p);
+                if (p && !this.hitList.includes(p)) this.hitList.push(p);
             });
         }
 

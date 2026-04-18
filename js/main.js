@@ -137,6 +137,7 @@ Game.Main = {
     },
 
     finishTurn(p) {
+        Game.PlayerManager.updateCamping(p);
         const coord = Game.Board.coordLabel(p.row, p.col);
         const extra = p.isInHouse ? ' (🏠 inside)' : '';
         this.log(`${p.name} → ${coord}${extra}`);
