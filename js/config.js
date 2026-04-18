@@ -37,53 +37,56 @@ Game.CONFIG = {
     CAMP_THRESHOLD: 3,       // rounds in same house → danger
     CAMP_SPAWN_CHANCE: 0.6,  // chance Slenderman spawns in camper's house
 
-    // House templates — [dr, dc, roomType]
+    // House templates — [dr, dc, roomType, isDoor]
     // Every house has: hall, kitchen, toilet, bedroom
     HOUSE_TEMPLATES: [
         // 3×3 square (9 tiles)
-        [[0,0,'hall'],[0,1,'hall'],[0,2,'kitchen'],
+        [[0,0,'hall',true],[0,1,'hall'],[0,2,'kitchen'],
          [1,0,'hall'],[1,1,'hall'],[1,2,'kitchen'],
          [2,0,'bedroom'],[2,1,'bedroom'],[2,2,'toilet']],
 
         // 4×3 tall (12 tiles)
-        [[0,0,'hall'],[0,1,'hall'],[0,2,'kitchen'],
+        [[0,0,'hall',true],[0,1,'hall'],[0,2,'kitchen'],
          [1,0,'hall'],[1,1,'hall'],[1,2,'kitchen'],
          [2,0,'bedroom'],[2,1,'bedroom'],[2,2,'toilet'],
          [3,0,'bedroom'],[3,1,'hall'],[3,2,'hall']],
 
         // 3×4 wide (12 tiles)
-        [[0,0,'hall'],[0,1,'hall'],[0,2,'kitchen'],[0,3,'kitchen'],
+        [[0,0,'hall',true],[0,1,'hall'],[0,2,'kitchen'],[0,3,'kitchen'],
          [1,0,'hall'],[1,1,'hall'],[1,2,'bedroom'],[1,3,'bedroom'],
          [2,0,'hall'],[2,1,'hall'],[2,2,'toilet'],[2,3,'bedroom']],
 
         // L-shape (8 tiles)
-        [[0,0,'hall'],[0,1,'hall'],
+        [[0,0,'hall',true],[0,1,'hall'],
          [1,0,'hall'],[1,1,'kitchen'],
          [2,0,'bedroom'],[2,1,'kitchen'],
          [3,0,'bedroom'],[3,1,'toilet']],
 
         // T-shape (8 tiles)
-        [[0,0,'kitchen'],[0,1,'hall'],[0,2,'hall'],[0,3,'bedroom'],
-         [1,1,'hall'],[1,2,'hall'],
-         [2,1,'toilet'],[2,2,'bedroom']],
+        [[0,0,'kitchen',true],[0,1,'hall',false],[0,2,'hall',false],[0,3,'bedroom',false],
+         [1,1,'hall',false],[1,2,'hall',false],
+         [2,1,'toilet',false],[2,2,'bedroom',false]],
 
         // Wide-L (9 tiles)
-        [[0,0,'hall'],[0,1,'hall'],[0,2,'hall'],
+        [[0,0,'hall',true],[0,1,'hall'],[0,2,'hall'],
          [1,0,'kitchen'],[1,1,'kitchen'],[1,2,'hall'],
          [2,0,'toilet'],[2,1,'bedroom'],[2,2,'bedroom']],
 
         // Narrow 2×4 (8 tiles)
-        [[0,0,'hall'],[0,1,'kitchen'],
+        [[0,0,'hall',true],[0,1,'kitchen'],
          [1,0,'hall'],[1,1,'kitchen'],
          [2,0,'hall'],[2,1,'toilet'],
          [3,0,'bedroom'],[3,1,'bedroom']],
 
         // Big 4×4 (16 tiles)
-        [[0,0,'hall'],[0,1,'hall'],[0,2,'kitchen'],[0,3,'kitchen'],
+        [[0,0,'hall',true],[0,1,'hall'],[0,2,'kitchen'],[0,3,'kitchen'],
          [1,0,'hall'],[1,1,'hall'],[1,2,'kitchen'],[1,3,'kitchen'],
          [2,0,'bedroom'],[2,1,'bedroom'],[2,2,'toilet'],[2,3,'toilet'],
          [3,0,'bedroom'],[3,1,'bedroom'],[3,2,'hall'],[3,3,'hall']],
     ],
+
+    SLENDER_MOVE_SPEED: 2,   // tiles per round
+
 
     // Room rendering
     ROOM_FLOOR: {

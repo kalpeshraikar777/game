@@ -3,16 +3,15 @@
 // ========================================
 Game.Slenderman = {
     row:-1, col:-1, active:false, hp:5,
-    scanLines:[], hitList:[],
+    scanLines:[], hitList:[], _lastHitPlayers:[],
 
     init(){ this.hp = Game.CONFIG.SLENDER_HP; this.active = false; },
 
     spawn() {
         const S = Game.CONFIG.BOARD_SIZE;
 
-        // 1) Target players who are camping OR visiting the same exact tile 3+ times, AND have no gun
+        // 1) Target players who are camping OR visiting the same exact tile 3+ times
         const targetCampers = Game.PlayerManager.alivePlayers().filter(p => {
-            if (p.guns > 0) return false;
             const key = `${p.row},${p.col}`;
             if (p.turnsInHouse >= Game.CONFIG.CAMP_THRESHOLD) return true;
             if (p.visitCounts[key] >= 3) return true;
@@ -39,6 +38,35 @@ Game.Slenderman = {
             }
         }
     },
+
+    move() {
+        if (!this.active) return;
+        const speed = Game.CONFIG.SLENDER_MOVE_SPEED || 2;
+        for (let i = 0; i < speed; i++) {
+            // Target nearest player NOT in a house (or any camper)
+            let target = null, minDist = Infinity;
+            Game.PlayerManager.alivePlayers().forEach(p => {
+                const d = Math.abs(p.row - this.row) + Math.abs(p.col - this.col);
+                if (d < minDist) {
+                    minDist = d;
+                    target = p;
+                }
+            });
+
+            if (!target) break;
+
+            const dr = target.row > this.row ? 1 : (target.row < this.row ? -1 : 0);
+            const dc = target.col > this.col ? 1 : (target.col < this.col ? -1 : 0);
+
+            // Move one step (Slenderman ghosts through trees but respects board bounds)
+            const nr = this.row + dr, nc = this.col + dc;
+            if (Game.Board.inBounds(nr, nc)) {
+                this.row = nr;
+                this.col = nc;
+            }
+        }
+    },
+
 
     isInHouse() { return Game.Board.grid[this.row]?.[this.col]?.type === 'house'; },
 
@@ -74,6 +102,7 @@ Game.Slenderman = {
             }
             this.scanLines.push({fr:this.row,fc:this.col,tr:er,tc:ec,progress:0});
         }
+        this._lastHitPlayers = [...this.hitList];
         return this.hitList;
     },
 

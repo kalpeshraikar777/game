@@ -36,15 +36,15 @@ Game.Objects = {
             if (!ok) continue;
 
             const id = this.list.length;
-            // Copy tiles with room data: [[dr, dc, room], ...]
-            const tiles = template.map(([dr, dc, room]) => [dr, dc, room]);
+            // Copy tiles with room data: [[dr, dc, room, isDoor], ...]
+            const tiles = template.map(([dr, dc, room, isDoor]) => [dr, dc, room, isDoor || false]);
             this.list.push({
                 id, type: 'house', row: r, col: c,
                 tiles,
                 color: pick(Game.CONFIG.HOUSE_COLORS),
                 roofColor: pick(Game.CONFIG.ROOF_COLORS),
             });
-            tiles.forEach(([dr, dc, room]) => Game.Board.setCell(r+dr, c+dc, 'house', id, room));
+            tiles.forEach(([dr, dc, room, isDoor]) => Game.Board.setCell(r+dr, c+dc, 'house', id, room, isDoor));
             return;
         }
     },
@@ -83,14 +83,38 @@ Game.Tokens = {
     list: [],
     init() {
         this.list = [];
-        for (let i = 0; i < Game.CONFIG.NUM_LIFE_TOKENS; i++) this.place('life');
-        for (let i = 0; i < Game.CONFIG.NUM_GUN_TOKENS; i++)  this.place('gun');
+        // 1) Ensure at least one token in every house
+        Game.Objects.list.filter(o => o.type === 'house').forEach(house => {
+            const t = pick(house.tiles);
+            this.list.push({
+                id: this.list.length,
+                type: Math.random() < 0.5 ? 'life' : 'gun',
+                row: house.row + t[0],
+                col: house.col + t[1],
+                active: true
+            });
+        });
+
+        // 2) Place remaining tokens randomly
+        const existingCount = this.list.length;
+        const totalLife = Game.CONFIG.NUM_LIFE_TOKENS;
+        const totalGun = Game.CONFIG.NUM_GUN_TOKENS;
+        
+        // Use a simpler approach: just fill up to the counts
+        let currentLife = this.list.filter(t => t.type === 'life').length;
+        let currentGun = this.list.filter(t => t.type === 'gun').length;
+
+        for (let i = currentLife; i < totalLife; i++) this.place('life');
+        for (let i = currentGun; i < totalGun; i++)  this.place('gun');
     },
     place(type) {
         const S = Game.CONFIG.BOARD_SIZE;
         for (let a = 0; a < 100; a++) {
             const r = Math.floor(Math.random()*S), c = Math.floor(Math.random()*S);
-            if (Game.Board.empty(r,c) && !this.at(r,c)) {
+            const cell = Game.Board.grid[r][c];
+            // Allow empty or house tiles for random placement too
+            const ok = (cell.type === 'empty' || cell.type === 'house') && !this.at(r,c);
+            if (ok) {
                 this.list.push({ id:this.list.length, type, row:r, col:c, active:true });
                 return;
             }

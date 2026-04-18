@@ -13,6 +13,20 @@ Game.Renderer = {
     wp(wx,wy){return Game.Camera.worldToScreen(wx,wy,this.canvas);},
     onScreen(wx,wy){const s=this.wp(wx,wy),m=160;return s.x>-m&&s.x<this.canvas.width+m&&s.y>-m&&s.y<this.canvas.height+m;},
 
+    isOccludingPlayer(r,c) {
+        // A player is "behind" an object at (r,c) if they are at (pr,pc) where pr+pc < r+c
+        // and they are visually near the object.
+        return Game.Players.some(p => {
+            if (!p.isAlive) return false;
+            // Isometric occlusion logic: higher r+c means "front"
+            if (p.row + p.col >= r + c) return false;
+            // Check visual distance (simple check: within a few tiles)
+            const dr = Math.abs(p.row - r);
+            const dc = Math.abs(p.col - c);
+            return (dr <= 1 && dc <= 1) || (dr <= 3 && dc <= 3 && Math.abs(dr - dc) < 2);
+        });
+    },
+
     /* ── tile ── */
     drawTile(r,c){
         const w=this.toScreen(r,c);if(!this.onScreen(w.x,w.y))return;
@@ -36,6 +50,9 @@ Game.Renderer = {
     /* ── trees ── */
     drawTree(r,c,obj){
         const w=this.toScreen(r,c);if(!this.onScreen(w.x,w.y))return;
+        const occluded = this.isOccludingPlayer(r,c);
+        if (occluded) this.ctx.globalAlpha = 0.25;
+
         const s=this.wp(w.x,w.y),z=Game.Camera.zoom,tw=Game.CONFIG.TILE_WIDTH*z,th=Game.CONFIG.TILE_HEIGHT*z;
         const sc=obj.scale||1,ctx=this.ctx,bx=s.x,by=s.y+th/2,h=tw*1.1*sc;
         const trW=tw*0.06,trH=h*0.3;
@@ -45,29 +62,39 @@ Game.Renderer = {
             ctx.beginPath();ctx.moveTo(bx,by-h*0.82);ctx.lineTo(bx+tw*0.28*sc,by-trH-h*0.12);ctx.lineTo(bx-tw*0.28*sc,by-trH-h*0.12);ctx.closePath();ctx.fill();
         }else if(obj.treeType===1){ctx.beginPath();ctx.ellipse(bx,by-trH-h*0.22,tw*0.22*sc,h*0.32,0,0,Math.PI*2);ctx.fill();
         }else if(obj.treeType===2){ctx.beginPath();ctx.moveTo(bx,by-h);ctx.lineTo(bx+tw*0.12*sc,by-trH);ctx.lineTo(bx-tw*0.12*sc,by-trH);ctx.closePath();ctx.fill();
-        }else{const R=tw*0.14*sc;
+        }else{
+            const R=tw*0.14*sc;
             ctx.beginPath();ctx.arc(bx,by-trH-R*1.5,R,0,Math.PI*2);ctx.fill();
             ctx.beginPath();ctx.arc(bx-R*0.7,by-trH-R*0.8,R*0.8,0,Math.PI*2);ctx.fill();
             ctx.beginPath();ctx.arc(bx+R*0.7,by-trH-R*0.8,R*0.8,0,Math.PI*2);ctx.fill();
         }
+        if (occluded) this.ctx.globalAlpha = 1.0;
     },
 
     drawRock(r,c,obj){
         const w=this.toScreen(r,c);if(!this.onScreen(w.x,w.y))return;
+        const occluded = this.isOccludingPlayer(r,c);
+        if (occluded) this.ctx.globalAlpha = 0.25;
+
         const s=this.wp(w.x,w.y),z=Game.Camera.zoom,tw=Game.CONFIG.TILE_WIDTH*z,th=Game.CONFIG.TILE_HEIGHT*z;
         const sc=obj.scale||1,ctx=this.ctx,bx=s.x,by=s.y+th/2;
         ctx.fillStyle=obj.color;
         if(obj.rockType===0){ctx.beginPath();ctx.ellipse(bx,by-tw*0.1*sc,tw*0.18*sc,tw*0.13*sc,0,0,Math.PI*2);ctx.fill();
         }else if(obj.rockType===1){ctx.beginPath();ctx.moveTo(bx-tw*0.14*sc,by);ctx.lineTo(bx-tw*0.18*sc,by-tw*0.14*sc);ctx.lineTo(bx,by-tw*0.2*sc);ctx.lineTo(bx+tw*0.16*sc,by-tw*0.08*sc);ctx.lineTo(bx+tw*0.13*sc,by);ctx.closePath();ctx.fill();
         }else{for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(bx+(i-1)*tw*0.08*sc,by-tw*0.05*sc,tw*0.07*sc,tw*0.05*sc,0,0,Math.PI*2);ctx.fill();}}
+        if (occluded) this.ctx.globalAlpha = 1.0;
     },
 
     drawPole(r,c,obj){
         const w=this.toScreen(r,c);if(!this.onScreen(w.x,w.y))return;
+        const occluded = this.isOccludingPlayer(r,c);
+        if (occluded) this.ctx.globalAlpha = 0.25;
+
         const s=this.wp(w.x,w.y),z=Game.Camera.zoom,tw=Game.CONFIG.TILE_WIDTH*z,th=Game.CONFIG.TILE_HEIGHT*z;
         const ctx=this.ctx,bx=s.x,by=s.y+th/2,h=tw*0.75;
         ctx.fillStyle=obj.color;ctx.fillRect(bx-tw*0.018,by-h,tw*0.036,h);
         ctx.fillStyle='#666';ctx.beginPath();ctx.arc(bx,by-h,tw*0.035,0,Math.PI*2);ctx.fill();
+        if (occluded) this.ctx.globalAlpha = 1.0;
     },
 
     /* ── houses with rooms ── */
@@ -85,7 +112,13 @@ Game.Renderer = {
         const tw=Game.CONFIG.TILE_WIDTH*z,th=Game.CONFIG.TILE_HEIGHT*z;
         const wallH=tw*0.45;
         const occupied=this.isHouseOccupied(obj);
-        if(occupied)ctx.globalAlpha=0.35;
+        // Also check if any player is behind the house
+        let occluded = false;
+        obj.tiles.forEach(([dr, dc]) => {
+            if (this.isOccludingPlayer(obj.row + dr, obj.col + dc)) occluded = true;
+        });
+
+        if(occupied || occluded)ctx.globalAlpha=0.35;
 
         const tset=new Set();
         const roomMap=new Map();
@@ -157,20 +190,21 @@ Game.Renderer = {
             }
         });
 
-        // Door on first left-exposed tile
-        for(const [dr,dc] of sorted){
-            if(!tset.has(`${dr+1},${dc}`)){
-                const r=obj.row+dr,c=obj.col+dc;
+        // Doors based on board data
+        sorted.forEach(([dr,dc])=>{
+            const r=obj.row+dr,c=obj.col+dc;
+            const cell = Game.Board.grid[r][c];
+            if(cell.isDoor){
                 const w=this.toScreen(r,c),s=this.wp(w.x,w.y);
-                const dw=tw*0.09,dh=wallH*0.42;
-                ctx.fillStyle='#1a0e05';
-                ctx.fillRect(s.x-tw/4-dw/2,s.y+th*0.75-dh,dw,dh);
-                // Door handle
-                ctx.fillStyle='#aa8844';
-                ctx.beginPath();ctx.arc(s.x-tw/4+dw*0.3,s.y+th*0.75-dh*0.4,dw*0.08,0,Math.PI*2);ctx.fill();
-                break;
+                const dw=tw*0.12,dh=wallH*0.5;
+                ctx.fillStyle='#2a150a';
+                // Draw door on the left-bottom edge of the tile
+                ctx.fillRect(s.x-tw/4-dw/2,s.y+th*0.6-dh,dw,dh);
+                // Handle
+                ctx.fillStyle='#ccaa44';
+                ctx.beginPath();ctx.arc(s.x-tw/4+dw*0.3,s.y+th*0.6-dh*0.4,dw*0.1,0,Math.PI*2);ctx.fill();
             }
-        }
+        });
         // Window glow
         for(const [dr,dc] of sorted){
             if(!tset.has(`${dr},${dc+1}`)){

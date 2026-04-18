@@ -15,6 +15,7 @@ Game.Board = {
                     objectId: null,
                     dark: (r + c) % 2 === 0,
                     room: null,   // 'hall','kitchen','toilet','bedroom'
+                    isDoor: false,
                 };
             }
         }
@@ -38,10 +39,12 @@ Game.Board = {
         return this.grid[r][c].type !== 'empty';
     },
     empty(r, c) { return this.inBounds(r, c) && this.grid[r][c].type === 'empty'; },
-    setCell(r, c, type, id, room) {
+    setCell(r, c, type, id, room, isDoor) {
         if (!this.inBounds(r, c)) return;
         this.grid[r][c].type = type;
         this.grid[r][c].objectId = id;
         this.grid[r][c].room = room || null;
+        this.grid[r][c].isDoor = !!isDoor;
     },
+
 };

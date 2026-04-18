@@ -10,22 +10,39 @@ Game.AI = {
             if (!Game.Board.walkable(nr,nc)) continue;
             if (Game.PlayerManager.at(nr,nc)) continue;
 
+            const oldCell = Game.Board.grid[player.row][player.col];
+            const newCell = Game.Board.grid[nr][nc];
+            // AI door enforcement
+            if (oldCell.type !== newCell.type && !oldCell.isDoor && !newCell.isDoor) continue;
+
             let score = 0;
-            // House = top priority cover
-            if (Game.Board.grid[nr][nc].type === 'house') score += 100;
-            // Nearby cover
+            // Cover/House preference
+            if (newCell.type === 'house') score += 100;
             score += this.coverScore(nr,nc);
-            // Token on tile = bonus
+
+            // Token seeking
             const tok = Game.Tokens.at(nr, nc);
-            if (tok) score += (tok.type === 'gun' ? 60 : 40);
-            // Center preference
+            if (tok) score += (tok.type === 'gun' ? 80 : 60);
+
+            // Slenderman avoidance
+            if (Game.Slenderman && Game.Slenderman.active) {
+                const dist = Math.abs(nr - Game.Slenderman.row) + Math.abs(nc - Game.Slenderman.col);
+                if (dist < 4) score -= (400 / (dist + 0.1)); // Heavy penalty for being close
+                else score += dist * 2; // Prefer distance
+            }
+
+            // Center penalty (to encourage moving out)
             const S = Game.CONFIG.BOARD_SIZE;
-            score -= (Math.abs(nr-S/2)+Math.abs(nc-S/2))*0.08;
-            score += Math.random()*6;
+            score -= (Math.abs(nr-S/2)+Math.abs(nc-S/2))*0.05;
+
+            // Random variation
+            score += Math.random()*10;
+
             if (score > bestScore) { bestScore = score; best = d; }
         }
         return best || dirs[Math.floor(Math.random()*dirs.length)];
     },
+
 
     coverScore(r,c) {
         let n = 0;

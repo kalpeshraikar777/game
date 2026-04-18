@@ -189,9 +189,13 @@ Game.Main = {
         Game.State.phase = 'SLENDERMAN_SPAWN';
         this.log('⚠️  SLENDERMAN APPEARS…');
         Game.Slenderman.spawn();
+        
+        // Let him move a bit after spawning
+        Game.Slenderman.move();
+        
         Game.Camera.panTo(Game.Slenderman.row, Game.Slenderman.col);
         const inHouse = Game.Slenderman.isInHouse();
-        this.log(`Slenderman spawns at ${Game.Board.coordLabel(Game.Slenderman.row, Game.Slenderman.col)}${inHouse ? ' (inside a house!)' : ''}!`);
+        this.log(`Slenderman hunting at ${Game.Board.coordLabel(Game.Slenderman.row, Game.Slenderman.col)}${inHouse ? ' (inside house!)' : ''}!`);
         this.showAlert();
         this.ui();
 
@@ -202,21 +206,23 @@ Game.Main = {
         }, Game.CONFIG.SLENDER_APPEAR_DELAY);
     },
 
+
     processDamage(hitPlayers) {
         const emergencyQueue = [];
 
         hitPlayers.forEach(p => {
+            // Protection: Extra Life acts as a shield
+            if (p.extraLives > 0) {
+                p.extraLives--;
+                this.log(`🛡️ ${p.name} protected by Extra Life! (Shield consumed)`);
+                emergencyQueue.push(p); // Still trigger emergency escape
+                return;
+            }
+
             p.hp--;
             if (p.hp <= 0) {
-                if (p.extraLives > 0) {
-                    p.extraLives--;
-                    p.hp = 1;
-                    emergencyQueue.push(p);
-                    this.log(`🛡️ ${p.name} used Extra Life! Emergency escape!`);
-                } else {
-                    Game.PlayerManager.eliminate(p.id);
-                    this.log(`💀 ${p.name} ELIMINATED by Slenderman!`);
-                }
+                Game.PlayerManager.eliminate(p.id);
+                this.log(`💀 ${p.name} ELIMINATED by Slenderman!`);
             } else {
                 this.log(`💥 ${p.name} hit! HP: ${p.hp}/${p.maxHp}`);
             }
@@ -263,11 +269,16 @@ Game.Main = {
             return;
         }
 
-        // Shooting phase — any alive player with guns?
-        const shooters = Game.PlayerManager.alivePlayers().filter(p => p.guns > 0);
+        // Shooting phase — ONLY players who were just hit AND have guns can shoot
+        const hitIds = new Set(Game.Slenderman._lastHitPlayers.map(p => p.id));
+        const shooters = Game.PlayerManager.alivePlayers().filter(p => p.guns > 0 && hitIds.has(p.id));
+        
         if (shooters.length > 0 && Game.Slenderman.hp > 0) {
             this.shootingPhase(shooters);
         } else {
+            if (Game.Slenderman.active && Game.PlayerManager.alivePlayers().some(p => p.guns > 0)) {
+                this.log('🔫 Only players encountered by Slenderman can shoot this round!');
+            }
             this.startNextRound();
         }
     },

@@ -48,18 +48,33 @@ Game.PlayerManager = {
         const nr = p.row+dr, nc = p.col+dc;
         if (!Game.Board.walkable(nr,nc)) return false;
         if (this.at(nr,nc)) return false;
+
+        const oldCell = Game.Board.grid[p.row][p.col];
+        const newCell = Game.Board.grid[nr][nc];
+
+        // Door Enforcement: Entry/Exit between 'empty' and 'house'
+        if (oldCell.type !== newCell.type) {
+            // If one is empty and other is house, one of them MUST be a door
+            if (!oldCell.isDoor && !newCell.isDoor) {
+                Game.Main.log("⚠️ You can only enter/exit through the door!");
+                return false;
+            }
+        }
+
         p.row = nr; p.col = nc;
-        const cell = Game.Board.grid[nr][nc];
-        p.isInHouse = cell.type === 'house';
+        p.isInHouse = newCell.type === 'house';
         p.movesLeft--;
 
         // Auto-pickup token
         const tok = Game.Tokens.at(nr, nc);
         if (tok) {
             Game.Tokens.pickup(tok.id);
-            if (tok.type === 'life') p.extraLives++;
+            if (tok.type === 'life') {
+                p.hp = Math.min(p.maxHp, p.hp + 1);
+                p.extraLives++;
+            }
             else if (tok.type === 'gun') p.guns++;
-            Game.Main.log(`${p.name} picked up ${tok.type==='life'?'🛡️ Extra Life':'🔫 Gun'}!`);
+            Game.Main.log(`${p.name} picked up ${tok.type==='life'?'🛡️ Heart & Extra Life':'🔫 Gun'}!`);
         }
         return true;
     },
