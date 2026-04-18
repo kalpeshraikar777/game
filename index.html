@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Slenderman — A 2D isometric forest board game. Roll 2 dice, collect tokens, dodge & shoot Slenderman.">
+    <title>Slenderman — Forest Board Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Setup -->
+<div id="setup-screen" class="overlay active">
+    <div class="setup-panel">
+        <h1 class="game-title">SLENDERMAN</h1>
+        <p class="game-subtitle">Forest Board Game</p>
+        <div class="setup-rules">
+            <p>🎲 Roll 2 dice · Move across the forest</p>
+            <p>🛡️ Collect Extra Lives · 🔫 Find Guns</p>
+            <p>❤️ Each player has 2 HP</p>
+            <p>💀 Slenderman has 5 HP — shoot to defeat!</p>
+        </div>
+        <div class="setup-section">
+            <h3>Human Players</h3>
+            <div class="player-count-selector">
+                <button class="player-count-btn active" data-count="1">1</button>
+                <button class="player-count-btn" data-count="2">2</button>
+                <button class="player-count-btn" data-count="3">3</button>
+                <button class="player-count-btn" data-count="4">4</button>
+                <button class="player-count-btn" data-count="5">5</button>
+                <button class="player-count-btn" data-count="6">6</button>
+            </div>
+            <p class="setup-note">Remaining slots filled by AI</p>
+        </div>
+        <button id="btn-start" class="btn-primary">Enter the Forest</button>
+    </div>
+</div>
+
+<!-- Slender Alert -->
+<div id="slender-alert" class="overlay">
+    <div class="slender-alert-content">
+        <h1>⚠️ SLENDERMAN</h1>
+        <p>He's watching…</p>
+    </div>
+</div>
+
+<!-- Victory -->
+<div id="victory-screen" class="overlay">
+    <div class="victory-panel">
+        <h1 class="victory-text"></h1>
+        <button onclick="location.reload()" class="btn-primary">Play Again</button>
+    </div>
+</div>
+
+<!-- Game Layout -->
+<div id="game-layout">
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="ui-panel">
+        <div class="panel-header">
+            <h2 id="round-display">Round 1</h2>
+            <div id="phase-display" class="phase-badge">Setup</div>
+        </div>
+
+        <!-- Slenderman HP -->
+        <div id="slender-hp" class="slender-hp-bar" style="display:none">
+            <span class="slender-label">👹 Slenderman</span>
+            <span id="slender-hp-value">❤️❤️❤️❤️❤️</span>
+        </div>
+
+        <!-- Player Cards -->
+        <div id="players-list">
+            <div id="player-card-0" class="player-card">
+                <div class="player-color" style="background:#ff4757"></div>
+                <div class="player-info">
+                    <div class="player-name">Crimson</div>
+                    <div class="player-meta">
+                        <span class="player-status">🏃 Active</span>
+                        <span class="player-pos">—</span>
+                        <span class="player-type">👤</span>
+                    </div>
+                    <div class="player-bottom">
+                        <span class="player-hp">❤️❤️</span>
+                        <span class="player-items"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="player-card-1" class="player-card">
+                <div class="player-color" style="background:#3742fa"></div>
+                <div class="player-info">
+                    <div class="player-name">Azure</div>
+                    <div class="player-meta">
+                        <span class="player-status">🏃 Active</span>
+                        <span class="player-pos">—</span>
+                        <span class="player-type">👤</span>
+                    </div>
+                    <div class="player-bottom">
+                        <span class="player-hp">❤️❤️</span>
+                        <span class="player-items"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="player-card-2" class="player-card">
+                <div class="player-color" style="background:#ffa502"></div>
+                <div class="player-info">
+                    <div class="player-name">Amber</div>
+                    <div class="player-meta">
+                        <span class="player-status">🏃 Active</span>
+                        <span class="player-pos">—</span>
+                        <span class="player-type">👤</span>
+                    </div>
+                    <div class="player-bottom">
+                        <span class="player-hp">❤️❤️</span>
+                        <span class="player-items"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="player-card-3" class="player-card">
+                <div class="player-color" style="background:#a855f7"></div>
+                <div class="player-info">
+                    <div class="player-name">Violet</div>
+                    <div class="player-meta">
+                        <span class="player-status">🏃 Active</span>
+                        <span class="player-pos">—</span>
+                        <span class="player-type">👤</span>
+                    </div>
+                    <div class="player-bottom">
+                        <span class="player-hp">❤️❤️</span>
+                        <span class="player-items"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="player-card-4" class="player-card">
+                <div class="player-color" style="background:#2ed573"></div>
+                <div class="player-info">
+                    <div class="player-name">Emerald</div>
+                    <div class="player-meta">
+                        <span class="player-status">🏃 Active</span>
+                        <span class="player-pos">—</span>
+                        <span class="player-type">👤</span>
+                    </div>
+                    <div class="player-bottom">
+                        <span class="player-hp">❤️❤️</span>
+                        <span class="player-items"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="player-card-5" class="player-card">
+                <div class="player-color" style="background:#ff6b81"></div>
+                <div class="player-info">
+                    <div class="player-name">Rose</div>
+                    <div class="player-meta">
+                        <span class="player-status">🏃 Active</span>
+                        <span class="player-pos">—</span>
+                        <span class="player-type">👤</span>
+                    </div>
+                    <div class="player-bottom">
+                        <span class="player-hp">❤️❤️</span>
+                        <span class="player-items"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dice -->
+        <div id="dice-section">
+            <button id="btn-roll" class="btn-dice" disabled>🎲 Roll Dice</button>
+            <canvas id="dice-canvas" width="160" height="70"></canvas>
+        </div>
+
+        <!-- Direction controls -->
+        <div id="direction-controls" style="display:none">
+            <button id="btn-up" class="btn-dir" title="Up">↑</button>
+            <button id="btn-left" class="btn-dir" title="Left">←</button>
+            <button id="btn-skip" class="btn-skip" title="Skip">Skip</button>
+            <button id="btn-right" class="btn-dir" title="Right">→</button>
+            <button id="btn-down" class="btn-dir" title="Down">↓</button>
+            <div class="move-hint">WASD / Arrows · Skip to end early</div>
+        </div>
+
+        <!-- Shoot phase -->
+        <div id="shoot-section" style="display:none">
+            <p id="shoot-label" class="shoot-label">Shoot?</p>
+            <button id="btn-shoot" class="btn-shoot">🔫 Shoot Slenderman!</button>
+        </div>
+
+        <!-- Log -->
+        <div id="log-section">
+            <h3>Game Log</h3>
+            <div id="game-log" class="log-container"></div>
+        </div>
+
+        <div class="controls-help">🖱️ Drag to pan · Scroll to zoom</div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/board.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/objects.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/player.js"></script>
+<script src="js/slenderman.js"></script>
+<script src="js/dice.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
