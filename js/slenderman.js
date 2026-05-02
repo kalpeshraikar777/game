@@ -1,5 +1,5 @@
 // ========================================
-// Slenderman — spawn (targets campers), LOS scan, HP
+// Tyrant — spawn (targets campers), LOS scan, HP
 // ========================================
 Game.Slenderman = {
     row:-1, col:-1, active:false, hp:5,
@@ -58,7 +58,7 @@ Game.Slenderman = {
             const dr = target.row > this.row ? 1 : (target.row < this.row ? -1 : 0);
             const dc = target.col > this.col ? 1 : (target.col < this.col ? -1 : 0);
 
-            // Move one step (Slenderman ghosts through trees but respects board bounds)
+            // Move one step (Tyrant ghosts through obstacles but respects board bounds)
             const nr = this.row + dr, nc = this.col + dc;
             if (Game.Board.inBounds(nr, nc)) {
                 this.row = nr;
@@ -74,7 +74,7 @@ Game.Slenderman = {
         this.hitList = [];
         this.scanLines = [];
 
-        // Check exact spot first (in case Slenderman spawned exactly on a player)
+        // Check exact spot first (in case Tyrant spawned exactly on a player)
         const pExact = Game.PlayerManager.at(this.row, this.col);
         if (pExact) this.hitList.push(pExact);
 

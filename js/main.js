@@ -34,6 +34,10 @@ Game.Main = {
 
     /* ── start ── */
     start() {
+        // Read mods from UI
+        Game.CONFIG.INFINITE_HP = document.getElementById('mod-hp').checked;
+        Game.CONFIG.INFINITE_AMMO = document.getElementById('mod-ammo').checked;
+
         document.getElementById('setup-screen').classList.remove('active');
         Game.Board.init();
         Game.Objects.init();
@@ -48,8 +52,8 @@ Game.Main = {
         Game.State.gameStarted = true;
         Game.State.currentPlayer = Game.Players.findIndex(p => p.isAlive);
 
-        this.log('🌲 Game started! Round 1');
-        this.log(`${this.cp().name}'s turn — Roll the dice!`);
+        this.log('☣️ OPERATION REQUIEM STARTED! Round 1');
+        this.log(`Survivor ${this.cp().name} active — Roll dice!`);
         Game.Camera.panTo(this.cp().row, this.cp().col);
         this.ui();
 
@@ -187,7 +191,7 @@ Game.Main = {
     /* ══════════════ SLENDERMAN PHASE ══════════════ */
     slendermanPhase() {
         Game.State.phase = 'SLENDERMAN_SPAWN';
-        this.log('⚠️  SLENDERMAN APPEARS…');
+        this.log('⚠️  TYRANT DETECTED…');
         Game.Slenderman.spawn();
         
         // Let him move a bit after spawning
@@ -195,7 +199,7 @@ Game.Main = {
         
         Game.Camera.panTo(Game.Slenderman.row, Game.Slenderman.col);
         const inHouse = Game.Slenderman.isInHouse();
-        this.log(`Slenderman hunting at ${Game.Board.coordLabel(Game.Slenderman.row, Game.Slenderman.col)}${inHouse ? ' (inside house!)' : ''}!`);
+        this.log(`Tyrant hunting at ${Game.Board.coordLabel(Game.Slenderman.row, Game.Slenderman.col)}${inHouse ? ' (inside facility!)' : ''}!`);
         this.showAlert();
         this.ui();
 
@@ -211,10 +215,17 @@ Game.Main = {
         const emergencyQueue = [];
 
         hitPlayers.forEach(p => {
+            // Mod: Infinite HP
+            if (Game.CONFIG.INFINITE_HP && p.isHuman) {
+                this.log(`🛡️ ${p.name} resisted damage! (Infinite HP mod)`);
+                emergencyQueue.push(p); 
+                return;
+            }
+
             // Protection: Extra Life acts as a shield
             if (p.extraLives > 0) {
                 p.extraLives--;
-                this.log(`🛡️ ${p.name} protected by Extra Life! (Shield consumed)`);
+                this.log(`💊 ${p.name} used Herb! (Shield consumed)`);
                 emergencyQueue.push(p); // Still trigger emergency escape
                 return;
             }
@@ -222,9 +233,9 @@ Game.Main = {
             p.hp--;
             if (p.hp <= 0) {
                 Game.PlayerManager.eliminate(p.id);
-                this.log(`💀 ${p.name} ELIMINATED by Slenderman!`);
+                this.log(`💀 ${p.name} ELIMINATED by the Tyrant!`);
             } else {
-                this.log(`💥 ${p.name} hit! HP: ${p.hp}/${p.maxHp}`);
+                this.log(`💥 ${p.name} injured! HP: ${p.hp}/${p.maxHp}`);
             }
         });
 
@@ -286,18 +297,18 @@ Game.Main = {
     /* ══════════════ SHOOTING PHASE ══════════════ */
     shootingPhase(shooters) {
         Game.State.phase = 'SHOOTING';
-        this.log('🔫 SHOOTING PHASE — Players fire at Slenderman!');
+        this.log('🔫 ENGAGEMENT — Survivors firing at Tyrant!');
         this.ui();
 
         // Process all shooters sequentially
         this.processShooters([...shooters], () => {
             // Check if Slenderman defeated
             if (Game.Slenderman.hp <= 0) {
-                this.log('🎉 SLENDERMAN DEFEATED! ALL PLAYERS WIN!');
+                this.log('🎉 OPERATION SUCCESS! TYRANT NEUTRALIZED!');
                 this.endGameAllWin();
                 return;
             }
-            this.log(`Slenderman HP: ${Game.Slenderman.hp}/${Game.CONFIG.SLENDER_HP}`);
+            this.log(`Tyrant Status: ${Game.Slenderman.hp}/${Game.CONFIG.SLENDER_HP} integrity`);
             this.startNextRound();
         });
     },
@@ -338,10 +349,15 @@ Game.Main = {
 
     doShoot(p) {
         if (p.guns <= 0) return;
-        p.guns--;
+        
+        // Mod: Infinite Ammo
+        if (!Game.CONFIG.INFINITE_AMMO || !p.isHuman) {
+            p.guns--;
+        }
+        
         const killed = Game.Slenderman.takeDamage(1);
-        this.log(`🔫 ${p.name} shoots Slenderman! (HP: ${Game.Slenderman.hp}/${Game.CONFIG.SLENDER_HP})`);
-        if (killed) this.log('💥 CRITICAL HIT — Slenderman collapses!');
+        this.log(`🔫 ${p.name} fires at Tyrant! (Integrity: ${Game.Slenderman.hp}/${Game.CONFIG.SLENDER_HP})`);
+        if (killed) this.log('💥 TARGET NEUTRALIZED — Tyrant collapsed!');
     },
 
     /* ── game end ── */

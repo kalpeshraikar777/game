@@ -74,7 +74,7 @@ Game.PlayerManager = {
                 p.extraLives++;
             }
             else if (tok.type === 'gun') p.guns++;
-            Game.Main.log(`${p.name} picked up ${tok.type==='life'?'🛡️ Heart & Extra Life':'🔫 Gun'}!`);
+            Game.Main.log(`${p.name} picked up ${tok.type==='life'?'💊 Green Herb & Extra Shield':'🔫 Ammo Case'}!`);
         }
         return true;
     },
@@ -93,7 +93,7 @@ Game.PlayerManager = {
             p.currentHouseId = null;
         }
 
-        // Track exact tile visits to lure Slenderman
+        // Track exact tile visits to lure the Tyrant
         const key = `${p.row},${p.col}`;
         p.visitCounts[key] = (p.visitCounts[key] || 0) + 1;
     },
