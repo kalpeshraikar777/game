@@ -34,10 +34,6 @@ Game.Main = {
 
     /* ── start ── */
     start() {
-        // Read mods from UI
-        Game.CONFIG.INFINITE_HP = document.getElementById('mod-hp').checked;
-        Game.CONFIG.INFINITE_AMMO = document.getElementById('mod-ammo').checked;
-
         document.getElementById('setup-screen').classList.remove('active');
         Game.Board.init();
         Game.Objects.init();
@@ -215,13 +211,6 @@ Game.Main = {
         const emergencyQueue = [];
 
         hitPlayers.forEach(p => {
-            // Mod: Infinite HP
-            if (Game.CONFIG.INFINITE_HP && p.isHuman) {
-                this.log(`🛡️ ${p.name} resisted damage! (Infinite HP mod)`);
-                emergencyQueue.push(p); 
-                return;
-            }
-
             // Protection: Extra Life acts as a shield
             if (p.extraLives > 0) {
                 p.extraLives--;
@@ -349,12 +338,7 @@ Game.Main = {
 
     doShoot(p) {
         if (p.guns <= 0) return;
-        
-        // Mod: Infinite Ammo
-        if (!Game.CONFIG.INFINITE_AMMO || !p.isHuman) {
-            p.guns--;
-        }
-        
+        p.guns--;
         const killed = Game.Slenderman.takeDamage(1);
         this.log(`🔫 ${p.name} fires at Tyrant! (Integrity: ${Game.Slenderman.hp}/${Game.CONFIG.SLENDER_HP})`);
         if (killed) this.log('💥 TARGET NEUTRALIZED — Tyrant collapsed!');

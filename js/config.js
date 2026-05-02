@@ -23,10 +23,6 @@ Game.CONFIG = {
     NUM_DICE: 2,
     DICE_SIDES: 6,
 
-    // Mods
-    INFINITE_HP: false,      // Will be set by UI
-    INFINITE_AMMO: false,    // Will be set by UI
-
     // Objects
     NUM_HOUSES: 8,      
     NUM_TREES: 85,
